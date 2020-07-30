@@ -1,1 +1,1 @@
-# Storage Model
+A simple standalone Javascript To Do app. 
