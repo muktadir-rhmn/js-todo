@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Do</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="container" >
+    <div id="left-side-bar">
+        <h1>Categories</h1>
+        <button id="btn-add-category">Add New</button>
+
+        <div id="category-list-container">
+        </div>
+    </div>
+
+    <div id="main">
+        <h1>To Do List</h1>
+
+        <div class="item-text-input">
+            <input id="item-text" type="text" class="form-control" placeholder="Item">
+        </div>
+
+        <div id="items">
+        </div>
+
+        <div id="action-bar">
+            <button id="toggle-done-items">Hide Done Items</button>
+        </div>
+    </div>
+
+    <div id="right-side-bar">
+        <h1>Selected Item</h1>
+        <div class="input">
+            <label for="cur-item-text">Item</label><br>
+            <input type="text" id="cur-item-text">
+        </div>
+        <div class="input">
+            <label for="note">Note</label><br>
+            <textarea id="note" style="resize: none;" cols="30" rows="10"></textarea><br>
+            <button id="btn-save-item-details" >Save</button>
+        </div>
+    </div>
+
+</div>
+<script src="js/CategoryList.js"></script>
+<script src="js/ItemTable.js"></script>
+<script src="js/Storage.js"></script>
+<script src="js/ItemDetails.js"></script>
+<script>
+    const storage = new Storage();
+    const config = storage.retrieveConfiguration();
+    const itemTable = new ItemTable(storage, config);
+    const itemDetails = new ItemDetails(storage, (itemID, item, note) => {itemTable.changeItemText(itemID, item)});
+    const categoryList = new CategoryList(storage, (categoryID) => {retrieveTable(categoryID); itemDetails.clear();});
+
+    const itemText = document.getElementById("item-text");
+    itemText.addEventListener("keyup", addItemIfEnter);
+    function addItemIfEnter(event) {
+        if (event.key !== "Enter") return;
+
+        const item = itemText.value;
+        if(item === "") {
+            alert("Invalid item");
+            return;
+        }
+
+        itemTable.storeAndPrependNewItem(item);
+
+        itemText.value = "";
+    }
+
+    const itemsDiv = document.getElementById("items");
+    function retrieveTable(categoryID=0) {
+        const curItemTable = itemTable.createTableNode(categoryID);
+
+        itemsDiv.innerText = "";
+        itemsDiv.append(curItemTable);
+    }
+
+    const toggleButton = document.getElementById("toggle-done-items");
+    toggleButton.addEventListener("click", toggleDoneItems);
+    function toggleDoneItems(event) {
+        config.hideDoneItems = !config.hideDoneItems;
+        storage.storeConfiguration(config);
+
+        updateToggleButtonLabel();
+        itemTable.changeVisibilityOfDoneItems(config.hideDoneItems);
+    }
+
+    function updateToggleButtonLabel() {
+        toggleButton.innerText = config.hideDoneItems ? "Show Done Items" : "Hide Done Items";
+    }
+
+    function retrieveCategories() {
+        const categoryListContainer = document.getElementById("category-list-container");
+        categoryListContainer.append(categoryList.createListNode(storage.retrieveCategories()));
+    }
+
+    function init() {
+        retrieveCategories();
+        retrieveTable();
+        updateToggleButtonLabel();
+    }
+
+    init();
+</script>
+</body>
+</html>
